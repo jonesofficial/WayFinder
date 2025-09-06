@@ -97,6 +97,12 @@ declare interface PaymentProps {
     rideTime: number;
 }
 
+export interface Location {
+    description: string;
+    lat: number;
+    lng: number;
+}
+
 export interface LocationStore {
     userAddress: string | null;
     userLongitude: number | null;

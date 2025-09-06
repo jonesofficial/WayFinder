@@ -1,19 +1,37 @@
-import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
+import React, {useEffect, useMemo, useRef, useState} from "react";
+import {Platform, Text, View} from "react-native";
 import {useLocationStore} from "@/store";
 import {calculateRegion} from "@/lib/map";
-import React, {useEffect, useMemo, useRef} from 'react';
-import {icons} from '@/constants';
-import MapViewDirections from "react-native-maps-directions";
-
+import {icons} from "@/constants";
 
 const Map = () => {
+    const [MapComponents, setMapComponents] = useState<any>(null);
+    const [routeCoords, setRouteCoords] = useState<any[]>([]); // ✅ store route polyline
+
     const {
-        userLongitude, userLatitude,
-        destinationLongitude, destinationLatitude,
+        userLongitude,
+        userLatitude,
+        destinationLongitude,
+        destinationLatitude,
     } = useLocationStore();
 
     const directionsAPI = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
-    const mapRef = useRef<MapView>(null);
+    const mapRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (Platform.OS !== "web") {
+            (async () => {
+                const MapViewModule = await import("react-native-maps");
+                const MapViewDirectionsModule = await import("react-native-maps-directions");
+                setMapComponents({
+                    MapView: MapViewModule.default,
+                    Marker: MapViewModule.Marker,
+                    PROVIDER_GOOGLE: MapViewModule.PROVIDER_GOOGLE,
+                    MapViewDirections: MapViewDirectionsModule.default,
+                });
+            })();
+        }
+    }, []);
 
     const region = useMemo(() => {
         return calculateRegion({
@@ -24,34 +42,40 @@ const Map = () => {
         });
     }, [userLatitude, userLongitude, destinationLatitude, destinationLongitude]);
 
-    // 🔁 Auto-zoom on both locations
+    // ✅ Whenever user moves or new route loaded → keep auto-zoom
     useEffect(() => {
-        if (
-            mapRef.current &&
-            userLatitude && userLongitude &&
-            destinationLatitude && destinationLongitude
-        ) {
-            mapRef.current.fitToCoordinates(
-                [
-                    {latitude: userLatitude, longitude: userLongitude},
-                    {latitude: destinationLatitude, longitude: destinationLongitude},
-                ],
-                {
-                    edgePadding: {top: 100, right: 100, bottom: 100, left: 100},
-                    animated: true,
-                }
-            );
+        if (mapRef.current && routeCoords.length > 0) {
+            mapRef.current.fitToCoordinates(routeCoords, {
+                edgePadding: {top: 100, right: 100, bottom: 100, left: 100},
+                animated: true,
+            });
         }
-    }, [userLatitude, userLongitude, destinationLatitude, destinationLongitude]);
+    }, [userLatitude, userLongitude, routeCoords]);
+
+    if (Platform.OS === "web") {
+        return (
+            <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
+                <Text style={{fontSize: 16, color: "gray"}}>
+                    Map is not supported on web.
+                </Text>
+            </View>
+        );
+    }
+
+    if (!MapComponents) {
+        return <View style={{flex: 1}}/>;
+    }
+
+    const {MapView, Marker, PROVIDER_GOOGLE, MapViewDirections} = MapComponents;
 
     return (
         <MapView
             ref={mapRef}
             provider={PROVIDER_GOOGLE}
-            style={{width: '100%', height: '100%'}}
+            style={{width: "100%", height: "100%"}}
             region={
                 destinationLatitude && destinationLongitude
-                    ? undefined  // handled by fitToCoordinates
+                    ? undefined
                     : {
                         latitude: userLatitude || 0,
                         longitude: userLongitude || 0,
@@ -82,9 +106,8 @@ const Map = () => {
                         title="Destination"
                         image={icons.pin}
                     />
-
                     <MapViewDirections
-                        origin={{latitude: userLatitude!, longitude: userLongitude!}}
+                        origin={{latitude: userLatitude, longitude: userLongitude}}
                         destination={{
                             latitude: destinationLatitude,
                             longitude: destinationLongitude,
@@ -95,13 +118,19 @@ const Map = () => {
                         mode="DRIVING"
                         optimizeWaypoints={true}
                         onReady={(result) => {
-                            // Defensive checks
-                            if (!result || typeof result.distance !== "number" || typeof result.duration !== "number") {
+                            if (
+                                !result ||
+                                typeof result.distance !== "number" ||
+                                typeof result.duration !== "number"
+                            ) {
                                 console.warn("❌ Invalid directions result:", result);
                                 return;
                             }
 
-                            const distance = Number(result.distance.toFixed(2)); // Safe now
+                            // ✅ Save route coordinates for auto-zoom updates
+                            setRouteCoords(result.coordinates);
+
+                            const distance = Number(result.distance.toFixed(2));
                             const totalMinutes = result.duration;
                             const hours = Math.floor(totalMinutes / 60);
                             const minutes = Math.round(totalMinutes % 60);
@@ -112,9 +141,6 @@ const Map = () => {
                                 distance,
                                 duration: formattedTime,
                             });
-
-                            console.log("✅ Distance:", distance, "km");
-                            console.log("✅ Duration:", formattedTime);
                         }}
                     />
                 </>

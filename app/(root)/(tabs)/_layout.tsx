@@ -75,11 +75,11 @@ const Layout = () => (
             }}
         />
         <Tabs.Screen
-            name="rides"
+            name="favorites"
             options={{
-                title: "Rides",
+                title: "Favorites",
                 headerShown: false,
-                tabBarIcon: ({focused}) => <TabIcon focused={focused} source={icons.list}/>
+                tabBarIcon: ({focused}) => <TabIcon focused={focused} source={icons.star}/>
             }}
         />
         <Tabs.Screen
