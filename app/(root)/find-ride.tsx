@@ -66,7 +66,7 @@ export default function FindRide() {
 
 
             <CustomButton
-                title="Get Directions Now!"
+                title="Connect to Device Now!"
                 onPress={() => router.push("/(root)/confirm-ride")}
                 className="mt-5"
             />

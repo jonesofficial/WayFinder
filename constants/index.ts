@@ -33,6 +33,7 @@ import onboarding3 from "@/assets/images/onboarding3.png";
 import signUpDashboard from "@/assets/images/signUpDashboard.png";
 import icon from "@/assets/images/icon.png";
 import bluetooth from "@/assets/images/Bluetooth.json";
+import bike from "@/assets/images/Bike.json";
 
 export const images = {
     onboarding1,
@@ -45,6 +46,7 @@ export const images = {
     noResult,
     message,
     bluetooth,
+    bike,
 };
 
 export const icons = {

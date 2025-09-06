@@ -191,6 +191,7 @@ import {useLocationStore} from "@/store";
 import {ReactNativeModal} from "react-native-modal";
 import CustomButton from "@/components/CustomButton";
 
+
 export default function Page() {
     const {user} = useUser();
     const {signOut} = useAuth();
@@ -277,6 +278,7 @@ export default function Page() {
                                     containerStyle="bg-white shadow-md shadow-neutral-300"
                                     handlePress={handleDestinationPress}
                                 />
+
 
                                 {/* Current Location */}
                                 <Text className="text-xl font-JakartaBold py-4">
